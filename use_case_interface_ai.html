@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pakar: Deteksi Kerusakan Komputer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px 30px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h2,h3 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        /* Style untuk Tabs */
+        .tab {
+            overflow: hidden;
+            border-bottom: 2px solid #3498db;
+            margin-bottom: 20px;
+            display: flex;
+        }
+        .tab button {
+            background-color: #f8f9fa;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 24px;
+            transition: 0.3s;
+            font-size: 16px;
+            font-weight: bold;
+            color: #7f8c8d;
+            flex: 1;
+            border-radius: 8px 8px 0 0;
+        }
+        .tab button:hover { background-color: #e3f2fd; color: #2980b9; }
+        .tab button.active { background-color: #3498db; color: white; }
+        .tabcontent { display: none; animation: fadeEffect 0.5s; }
+        
+        @keyframes fadeEffect {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+
+        /* Layout Panel */
+        .flex-container { display: flex; gap: 20px; }
+        .panel {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .panel-large { flex: 1.2; }
+        .panel-small { flex: 0.8; }
+        
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+        label:hover { background: #e9ecef; }
+        input[type="checkbox"] { margin-top: 4px; }
+        
+        /* List Style Global */
+        ul { list-style-type: none; padding: 0; margin: 0; }
+        .fc-item {
+            background: #e3f2fd;
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 5px solid #3498db;
+            font-size: 14px;
+        }
+        .match-exact { background: #d4edda; border-left-color: #28a745; }
+        
+        /* Style Khusus Backward Chaining */
+        .bc-rule-box {
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 5px solid #2c3e50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .bc-rule-title {
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .bc-gejala-item {
+            background: #fdfbf7;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            border-left: 3px solid #e67e22;
+            font-size: 13px;
+        }
+
+        .badge { font-weight: bold; display: inline-block; }
+        .badge-gejala { color: #e67e22; width: 35px; }
+        .badge-kerusakan { color: #2980b9; }
+        .match-exact .badge-kerusakan { color: #28a745; }
+        
+        .empty-state {
+            background: transparent;
+            border: none;
+            color: #7f8c8d;
+            text-align: center;
+            font-style: italic;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Sistem Deteksi Kerusakan</h2>
+    <h3>By: Arya Wahyu P.</h3>
+
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'Forward')">Forward Chaining (Gejala -> Kerusakan)</button>
+        <button class="tablinks" onclick="openTab(event, 'Backward')">Backward Chaining (Kerusakan -> Gejala)</button>
+    </div>
+
+    <div id="Forward" class="tabcontent" style="display: block;">
+        <div class="flex-container">
+            <div class="panel panel-large">
+                <h3>1. Pilih Gejala yang Dialami (B)</h3>
+                <div class="checkbox-grid" id="fc-gejala-container"></div>
+            </div>
+            <div class="panel panel-small">
+                <h3>2. Diagnosis Kerusakan (A)</h3>
+                <ul id="fc-kerusakan-list">
+                    <li class="empty-state">Belum ada gejala yang dipilih.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="Backward" class="tabcontent">
+        <div class="flex-container">
+            <div class="panel">
+                <h3>1. Pilih Dugaan Kerusakan (A)</h3>
+                <div class="checkbox-grid" id="bc-kerusakan-container"></div>
+            </div>
+            <div class="panel">
+                <h3>2. Gejala Umum yang Beririsan (B)</h3>
+                <div id="bc-gejala-list">
+                    <div class="empty-state">Silakan centang kerusakan di samping.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- DATA BASIS PENGETAHUAN ---
+    const gejalaData = {
+        "B1": "Tidak ada gambar tertampil di monitor", "B2": "Terdapat garis horisontal / vertikal ditengah monitor",
+        "B3": "Tidak ada tampilan awal bios", "B4": "Muncul pesan error pada bios (isi pesan selalu berbeda)",
+        "B5": "Alarm bios berbunyi", "B6": "Terdengar suara aneh pada HDD",
+        "B7": "Sering terjadi hang/crash saat menjalankan aplikasi", "B8": "Selalu Scandisk ketika booting",
+        "B9": "Muncul pesan error saat menjalankan game atau aplikasi grafis", "B10": "Device driver informasi tidak terdeteksi",
+        "B11": "Tiba-tiba OS melakukan restart otomatis", "B12": "Keluarnya blue screen pada OS Windows",
+        "B13": "Suara tetap tidak keluar meskipun driver telah disetting", "B14": "Muncul pesan error saat menjalankan aplikasi audio",
+        "B15": "Muncul pesan error saat pertama OS di load dari HDD", "B16": "Tidak ada tanda-tanda dari sebagian/seluruh perangkat bekerja",
+        "B17": "Sering tiba-tiba mati tanpa sebab", "B18": "Muncul pesan pada windows, kekurangan virtual memori",
+        "B19": "Aplikasi berjalan dengan lambat, respon lambat", "B20": "Kinerja grafis terasa sangat berat",
+        "B21": "Device tidak terdeteksi dalam bios", "B22": "Informasi deteksi yang salah dalam bios",
+        "B23": "Hanya sebagian perangkat yang bekerja", "B24": "Sebagian/seluruh karakter inputan mati",
+        "B25": "Pointer mouse tidak merespon gerakan mouse"
+    };
+
+    const rules = [
+        { id: "A1", ruleNo: 1, nama: "MONITOR RUSAK", gejala: ["B1", "B2"] },
+        { id: "A2", ruleNo: 2, nama: "MEMORI RUSAK", gejala: ["B3", "B4", "B5", "B11", "B12"] },
+        { id: "A3", ruleNo: 3, nama: "HDD RUSAK", gejala: ["B6", "B7", "B8", "B10", "B21", "B22"] },
+        { id: "A4", ruleNo: 4, nama: "VGA RUSAK", gejala: ["B1", "B3", "B5", "B9", "B10", "B12", "B13"] },
+        { id: "A5", ruleNo: 5, nama: "SOUND CARD RUSAK", gejala: ["B10", "B13", "B14"] },
+        { id: "A6", ruleNo: 6, nama: "OS BERMASALAH", gejala: ["B11", "B15"] },
+        { id: "A7", ruleNo: 7, nama: "APLIKASI RUSAK", gejala: ["B7", "B12"] },
+        { id: "A8", ruleNo: 8, nama: "PSU RUSAK", gejala: ["B16", "B17"] },
+        { id: "A9", ruleNo: 9, nama: "PROSESOR RUSAK", gejala: ["B1", "B3", "B4", "B5"] },
+        { id: "A10", ruleNo: 10, nama: "MEMORY KURANG", gejala: ["B18", "B19"] },
+        { id: "A11", ruleNo: 11, nama: "MEMORY VGA KURANG", gejala: ["B9", "B20"] },
+        { id: "A12", ruleNo: 12, nama: "CLOCK PROSESOR KURANG", gejala: ["B19"] },
+        { id: "A13", ruleNo: 13, nama: "KABEL IDE RUSAK", gejala: ["B21"] },
+        { id: "A14", ruleNo: 14, nama: "KURANG DAYA PSU", gejala: ["B5", "B23"] },
+        { id: "A15", ruleNo: 15, nama: "PERANGKAT USB RUSAK", gejala: ["B10"] },
+        { id: "A16", ruleNo: 16, nama: "KEYBOARD RUSAK", gejala: ["B10", "B24"] },
+        { id: "A17", ruleNo: 17, nama: "MOUSE RUSAK", gejala: ["B10", "B25"] }
+    ];
+
+    // --- FUNGSI PINDAH TAB ---
+    function openTab(evt, tabName) {
+        let tabcontent = document.getElementsByClassName("tabcontent");
+        for (let i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        let tablinks = document.getElementsByClassName("tablinks");
+        for (let i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+    // --- INISIALISASI FORWARD CHAINING ---
+    const fcContainer = document.getElementById('fc-gejala-container');
+    const fcList = document.getElementById('fc-kerusakan-list');
+
+    for (const [kode, teks] of Object.entries(gejalaData)) {
+        let lbl = document.createElement('label');
+        lbl.innerHTML = `<input type="checkbox" value="${kode}" class="fc-checkbox"> 
+                         <span><span class="badge badge-gejala">${kode}</span> ${teks}</span>`;
+        fcContainer.appendChild(lbl);
+    }
+
+    document.querySelectorAll('.fc-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const checkedGejala = Array.from(document.querySelectorAll('.fc-checkbox:checked')).map(c => c.value);
+            fcList.innerHTML = ""; 
+
+            if (checkedGejala.length === 0) {
+                fcList.innerHTML = '<li class="empty-state">Belum ada gejala yang dipilih.</li>';
+                return;
+            }
+
+            const possibleRules = rules.filter(r => checkedGejala.every(g => r.gejala.includes(g)));
+
+            if (possibleRules.length === 0) {
+                fcList.innerHTML = '<li style="background: #f8d7da; border-left-color: #dc3545; color: #721c24; padding: 12px; border-radius: 5px;">Tidak ada kerusakan yang cocok dengan kombinasi gejala ini.</li>';
+                return;
+            }
+
+            possibleRules.forEach(rule => {
+                const isExact = rule.gejala.length === checkedGejala.length;
+                let li = document.createElement('li');
+                li.className = "fc-item";
+                if (isExact) li.classList.add('match-exact');
+                
+                li.innerHTML = `
+                    <span class="badge badge-kerusakan">${rule.id}</span> - ${rule.nama} 
+                    <span style="font-size:11px; color:#555; float:right;">${isExact ? '✓ Cocok 100%' : 'Dugaan Sementara'}</span>
+                    <div style="font-size: 11px; margin-top: 5px; color: #666;">Berdasarkan Rule ${rule.ruleNo}: Butuh ${rule.gejala.join(', ')}</div>
+                `;
+                fcList.appendChild(li);
+            });
+        });
+    });
+
+    // --- INISIALISASI BACKWARD CHAINING ---
+    const bcContainer = document.getElementById('bc-kerusakan-container');
+    const bcList = document.getElementById('bc-gejala-list');
+
+    rules.forEach(rule => {
+        let lbl = document.createElement('label');
+        lbl.innerHTML = `<input type="checkbox" value="${rule.id}" class="bc-checkbox"> 
+                         <span><span class="badge badge-kerusakan">${rule.id}</span> - ${rule.nama}</span>`;
+        bcContainer.appendChild(lbl);
+    });
+
+    // Logika Evaluasi Backward (MENCARI IRISAN / INTERSECTION)
+    document.querySelectorAll('.bc-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const checkedKerusakan = Array.from(document.querySelectorAll('.bc-checkbox:checked')).map(c => c.value);
+            bcList.innerHTML = ""; 
+
+            if (checkedKerusakan.length === 0) {
+                bcList.innerHTML = '<div class="empty-state">Silakan centang kerusakan di samping.</div>';
+                return;
+            }
+
+            // 1. Ambil daftar gejala untuk setiap Kerusakan yang dicentang
+            const arraysOfGejala = checkedKerusakan.map(idA => {
+                return rules.find(r => r.id === idA).gejala;
+            });
+
+            // 2. Cari irisan (intersection) dari semua daftar gejala tersebut
+            // Cara kerjanya: Cek apakah gejala tersebut ada di SEMUA kerusakan yang dicentang
+            const commonGejala = arraysOfGejala.reduce((acc, curr) => {
+                return acc.filter(gejala => curr.includes(gejala));
+            });
+
+            // 3. Jika tidak ada gejala yang sama
+            if (commonGejala.length === 0) {
+                bcList.innerHTML = '<div class="empty-state" style="color: #e74c3c; font-weight: bold;">Tidak ada gejala umum (irisan) yang cocok untuk semua kerusakan yang dipilih.</div>';
+                return;
+            }
+
+            // 4. Jika ada gejala yang sama, tampilkan
+            let ruleBox = document.createElement('div');
+            ruleBox.className = "bc-rule-box";
+            
+            let title = document.createElement('div');
+            title.className = "bc-rule-title";
+            title.innerHTML = `
+                <span style="font-size: 13px; color: #7f8c8d;">Gejala umum yang PASTI terjadi jika mengalami:</span><br>
+                <b>${checkedKerusakan.join(', ')}</b>
+            `;
+            ruleBox.appendChild(title);
+
+            let ulGejala = document.createElement('ul');
+            commonGejala.forEach(kodeB => {
+                let liGejala = document.createElement('li');
+                liGejala.className = "bc-gejala-item";
+                liGejala.innerHTML = `<span class="badge badge-gejala">${kodeB}</span> ${gejalaData[kodeB]}`;
+                ulGejala.appendChild(liGejala);
+            });
+            
+            ruleBox.appendChild(ulGejala);
+            bcList.appendChild(ruleBox);
+        });
+    });
+</script>
+
+</body>
+</html>
