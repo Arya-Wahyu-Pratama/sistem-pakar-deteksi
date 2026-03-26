@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Pakar: Deteksi Kerusakan Komputer</title>
     <style>
+        /* --- STYLE DASAR --- */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f7f6;
             color: #333;
             padding: 20px;
             line-height: 1.6;
+            margin: 0;
         }
         .container {
             max-width: 1000px;
@@ -20,13 +22,13 @@
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        h2,h3 {
+        h2 {
             color: #2c3e50;
             text-align: center;
             margin-bottom: 20px;
         }
         
-        /* Style untuk Tabs */
+        /* --- STYLE UNTUK TABS --- */
         .tab {
             overflow: hidden;
             border-bottom: 2px solid #3498db;
@@ -55,7 +57,7 @@
             to {opacity: 1;}
         }
 
-        /* Layout Panel */
+        /* --- LAYOUT PANEL (FLEXBOX) --- */
         .flex-container { display: flex; gap: 20px; }
         .panel {
             flex: 1;
@@ -86,9 +88,9 @@
             font-size: 13px;
         }
         label:hover { background: #e9ecef; }
-        input[type="checkbox"] { margin-top: 4px; }
+        input[type="checkbox"] { margin-top: 4px; flex-shrink: 0; }
         
-        /* List Style Global */
+        /* --- STYLE DAFTAR & BADGE --- */
         ul { list-style-type: none; padding: 0; margin: 0; }
         .fc-item {
             background: #e3f2fd;
@@ -100,7 +102,6 @@
         }
         .match-exact { background: #d4edda; border-left-color: #28a745; }
         
-        /* Style Khusus Backward Chaining */
         .bc-rule-box {
             background: #ffffff;
             border: 1px solid #ccc;
@@ -138,19 +139,50 @@
             font-style: italic;
             padding: 15px;
         }
+
+        /* --- RESPONSIVE UNTUK HP (MOBILE) --- */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .flex-container {
+                flex-direction: column; /* Mengubah tata letak menjadi atas-bawah */
+            }
+            .tab {
+                flex-direction: column; /* Tab bersusun ke bawah di HP */
+                border-bottom: none;
+            }
+            .tab button {
+                border-radius: 8px;
+                margin-bottom: 8px;
+                border: 1px solid #ddd;
+            }
+            .tab button.active {
+                border-color: #3498db;
+            }
+            .panel {
+                padding: 15px;
+            }
+            .checkbox-grid {
+                max-height: 300px; /* Sedikit dipendekkan agar scroll HP lebih nyaman */
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Sistem Deteksi Kerusakan</h2>
-    <h3>By: Arya Wahyu P.</h3>
+    <h2>Sistem Pakar: Deteksi Kerusakan</h2>
 
     <div class="tab">
         <button class="tablinks active" onclick="openTab(event, 'Forward')">Forward Chaining (Gejala -> Kerusakan)</button>
         <button class="tablinks" onclick="openTab(event, 'Backward')">Backward Chaining (Kerusakan -> Gejala)</button>
     </div>
 
+    <!-- Konten Tab Forward Chaining -->
     <div id="Forward" class="tabcontent" style="display: block;">
         <div class="flex-container">
             <div class="panel panel-large">
@@ -166,6 +198,7 @@
         </div>
     </div>
 
+    <!-- Konten Tab Backward Chaining -->
     <div id="Backward" class="tabcontent">
         <div class="flex-container">
             <div class="panel">
@@ -290,7 +323,7 @@
         bcContainer.appendChild(lbl);
     });
 
-    // Logika Evaluasi Backward (MENCARI IRISAN / INTERSECTION)
+    // Logika Evaluasi Backward (MENCARI IRISAN)
     document.querySelectorAll('.bc-checkbox').forEach(cb => {
         cb.addEventListener('change', () => {
             const checkedKerusakan = Array.from(document.querySelectorAll('.bc-checkbox:checked')).map(c => c.value);
@@ -301,31 +334,26 @@
                 return;
             }
 
-            // 1. Ambil daftar gejala untuk setiap Kerusakan yang dicentang
             const arraysOfGejala = checkedKerusakan.map(idA => {
                 return rules.find(r => r.id === idA).gejala;
             });
 
-            // 2. Cari irisan (intersection) dari semua daftar gejala tersebut
-            // Cara kerjanya: Cek apakah gejala tersebut ada di SEMUA kerusakan yang dicentang
             const commonGejala = arraysOfGejala.reduce((acc, curr) => {
                 return acc.filter(gejala => curr.includes(gejala));
             });
 
-            // 3. Jika tidak ada gejala yang sama
             if (commonGejala.length === 0) {
                 bcList.innerHTML = '<div class="empty-state" style="color: #e74c3c; font-weight: bold;">Tidak ada gejala umum (irisan) yang cocok untuk semua kerusakan yang dipilih.</div>';
                 return;
             }
 
-            // 4. Jika ada gejala yang sama, tampilkan
             let ruleBox = document.createElement('div');
             ruleBox.className = "bc-rule-box";
             
             let title = document.createElement('div');
             title.className = "bc-rule-title";
             title.innerHTML = `
-                <span style="font-size: 13px; color: #7f8c8d;">Gejala umum yang PASTI terjadi jika mengalami:</span><br>
+                <span style="font-size: 13px; color: #7f8c8d;">Gejala umum (irisan) yang PASTI terjadi jika mengalami:</span><br>
                 <b>${checkedKerusakan.join(', ')}</b>
             `;
             ruleBox.appendChild(title);
@@ -343,5 +371,6 @@
         });
     });
 </script>
+
 </body>
 </html>
